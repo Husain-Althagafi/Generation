@@ -27,7 +27,7 @@ vlmodel, preprocess_train, feature_extractor = open_clip.create_model_and_transf
 import json
 
 # Load the configuration from the JSON file
-config_path = "/home/thagafhh/work/EEG_Image_decode/Generation/data_config.json"
+config_path = "/root/mjo/Generation/data_config.json"
 with open(config_path, "r") as config_file:
     config = json.load(config_file)
 
@@ -36,9 +36,9 @@ with open(config_path, "r") as config_file:
 # img_directory_training = config["img_directory_training"]
 # img_directory_test = config["img_directory_test"]
 
-data_path = "/ibex/user/thagafhh/data/Preprocessed_data_250Hz"
-img_directory_training = "/ibex/user/thagafhh/data/training_images"
-img_directory_test = "/ibex/user/thagafhh/data/test_images"
+data_path = "/root/mjo/datasets/things-eeg/embeddings/Preprocessed_data_250Hz"
+img_directory_training = "/root/mjo/datasets/things-eeg/image_set/training_images"
+img_directory_test = "/root/mjo/datasets/things-eeg/image_set/test_images"
 
 class EEGDataset():
     """

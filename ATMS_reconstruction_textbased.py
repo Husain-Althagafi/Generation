@@ -1,11 +1,11 @@
 #atms
 import os
 import sys
-PROJECT_ROOT = "/home/thagafhh/work/EEG_Image_decode/Generation"
+PROJECT_ROOT = "/root/mjo/Generation"
 if PROJECT_ROOT not in sys.path:
     sys.path.append(PROJECT_ROOT)
 
-utils_root = '/home/thagafhh/work/EEG_Image_decode/Generation/utils'
+utils_root = '/root/mjo/Generation/utils'
 if utils_root not in sys.path:
     sys.path.append(utils_root)
 
@@ -285,6 +285,8 @@ def evaluate_model(sub, eeg_model, dataloader, device, text_features_all, img_fe
             text_features = text_features.to(device).float()
             labels = labels.to(device)
             img_features = img_features.to(device).float()
+
+            print(f'text_features shape: {text_features.shape}, img_features shape: {img_features.shape}')
             
             batch_size = eeg_data.size(0)  # Assume the first element is the data tensor
             subject_id = extract_id_from_string(sub)
@@ -302,10 +304,12 @@ def evaluate_model(sub, eeg_model, dataloader, device, text_features_all, img_fe
             # print(eeg_features.type, text_features.type, img_features.type)
             img_loss = eeg_model.loss_func(eeg_features, img_features, logit_scale)
             text_loss = eeg_model.loss_func(eeg_features, text_features, logit_scale)
+            # print(f'text_loss: {text_loss.item()}, img_loss: {img_loss.item()}')
             regress_loss =  mse_loss_fn(eeg_features, img_features)
             # loss = (alpha * regress_loss *10 + (1 - alpha) * img_loss*10)
             loss = text_loss
-            total_loss += loss.item()
+            # total_loss += loss.item()
+            total_loss += loss
             
             for idx, label in enumerate(labels):
                 # First select k-1 classes excluding the correct class
@@ -326,6 +330,8 @@ def evaluate_model(sub, eeg_model, dataloader, device, text_features_all, img_fe
                     # Get predicted class
                     # predicted_label = selected_classes[torch.argmax(logits_single).item()]
                     predicted_label = selected_classes[torch.argmax(logits_single).item()] # (n_batch, ) ∈ {0, 1, ..., n_cls-1}
+                    # print('selected_classes', selected_classes)
+
                     if predicted_label == label.item():
                         # print("predicted_label", predicted_label)
                         correct += 1
@@ -347,7 +353,7 @@ def evaluate_model(sub, eeg_model, dataloader, device, text_features_all, img_fe
                     # logits_img = logit_scale * eeg_features[idx] @ selected_img_features.T
                     # logits_single = logits_img
 
-                    logits_text = logit_scale * eeg_features[idx] @ text_features_all.T
+                    logits_text = logit_scale * eeg_features[idx] @ selected_text_features.T
                     logits_single = logits_text
 
                     
@@ -368,10 +374,11 @@ def evaluate_model(sub, eeg_model, dataloader, device, text_features_all, img_fe
                     # logits_single = (logits_text + logits_img) / 2.0
                     # logits_single = logits_img
 
-                    logits_text = logit_scale * eeg_features[idx] @ text_features_all.T
+                    logits_text = logit_scale * eeg_features[idx] @ selected_text_features.T
                     logits_single = logits_text
 
                     # print("logits_single", logits_single.shape)
+                    # print('selected_classes', selected_classes)
                     # Get predicted class
                     # predicted_label = selected_classes[torch.argmax(logits_single).item()]
                     predicted_label = selected_classes[torch.argmax(logits_single).item()] # (n_batch, ) ∈ {0, 1, ..., n_cls-1}
@@ -413,12 +420,12 @@ def main_train_loop(sub, current_time, eeg_model, train_dataloader, test_dataloa
         if (epoch +1) % 5 == 0:                    
             # Save the model every 5 epochs                  
             if config.insubject==True:       
-                os.makedirs(f"/ibex/user/thagafhh/data/models/contrast/{config.encoder_type}/{sub}/{current_time}", exist_ok=True)             
-                file_path = f"/ibex/user/thagafhh/data/models/contrast/{config.encoder_type}/{sub}/{current_time}/{epoch+1}.pth"
+                os.makedirs(f"/root/mjo/data/models/contrast/{config.encoder_type}/{sub}/{current_time}", exist_ok=True)             
+                file_path = f"/root/mjo/data/models/contrast/{config.encoder_type}/{sub}/{current_time}/{epoch+1}.pth"
                 torch.save(eeg_model.state_dict(), file_path)            
             else:                
-                os.makedirs(f"/ibex/user/thagafhh/data/models/contrast/across/{config.encoder_type}/{current_time}", exist_ok=True)             
-                file_path = f"/ibex/user/thagafhh/data/models/contrast/across/{config.encoder_type}/{current_time}/{epoch+1}.pth"
+                os.makedirs(f"/root/mjo/data/models/contrast/across/{config.encoder_type}/{current_time}", exist_ok=True)             
+                file_path = f"/root/mjo/thagafhh/data/models/contrast/across/{config.encoder_type}/{current_time}/{epoch+1}.pth"
                 torch.save(eeg_model.state_dict(), file_path)
             print(f"Model saved in {file_path}!")
         train_losses.append(train_loss)
@@ -465,7 +472,7 @@ def main_train_loop(sub, current_time, eeg_model, train_dataloader, test_dataloa
             best_epoch_labels = eeg_inference_labels
 
             if config.insubject:
-                save_dir = f"/ibex/user/thagafhh/data/models/contrast/{config.encoder_type}/{sub}/{current_time}"
+                save_dir = f"/root/mjo/data/models/contrast/{config.encoder_type}/{sub}/{current_time}"
                 os.makedirs(save_dir, exist_ok=True)
                 torch.save(eeg_model.state_dict(), f"{save_dir}/best_model.pth")
                 print(f"New best accuracy: {best_accuracy:.4f}. Model saved.")
@@ -558,8 +565,8 @@ import datetime
 def main():
     # Use argparse to parse the command-line arguments
     parser = argparse.ArgumentParser(description='EEG Transformer Training Script')
-    parser.add_argument('--data_path', type=str, default="/ibex/user/thagafhh/data/Preprocessed_data_250Hz", help='Path to the EEG dataset')
-    parser.add_argument('--output_dir', type=str, default='/home/thagafhh/work/EEG_Image_decode/Generation/outputs/contrast', help='Directory to save output results')    
+    parser.add_argument('--data_path', type=str, default="/root/mjo/datasets/things-eeg/embeddings/Preprocessed_data_250Hz", help='Path to the EEG dataset')
+    parser.add_argument('--output_dir', type=str, default='/root/mjo/Generation/outputs/contrast', help='Directory to save output results')    
     parser.add_argument('--project', type=str, default="EEG_Image_decode", help='WandB project name')
     parser.add_argument('--entity', type=str, default="husain-althagafi-king-fahd-university-of-petroleum-minerals", help='WandB entity name')
     parser.add_argument('--name', type=str, default="basic run text based", help='Experiment name')

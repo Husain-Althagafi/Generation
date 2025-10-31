@@ -37,8 +37,8 @@ with open(config_path, "r") as config_file:
 # img_directory_test = config["img_directory_test"]
 
 data_path = "/root/mjo/datasets/things-eeg/embeddings/Preprocessed_data_250Hz"
-img_directory_training = "/root/mjo/datasets/things-eeg/image_set/training_images"
-img_directory_test = "/root/mjo/datasets/things-eeg/image_set/test_images"
+img_directory_training = "/root/mjo/datasets/things-eeg/image_set/training_images/training_images"
+img_directory_test = "/root/mjo/datasets/things-eeg/image_set/test_images/test_images"
 
 class EEGDataset():
     """
@@ -66,7 +66,7 @@ class EEGDataset():
         
         if self.classes is None and self.pictures is None:
             # Try to load the saved features if they exist
-            features_filename = os.path.join(f'/ibex/user/thagafhh/data/{model_type}_features_train.pt') if self.train else os.path.join(f'/ibex/user/thagafhh/data/{model_type}_features_test.pt')
+            features_filename = os.path.join(f'/root/mjo/datasets/{model_type}_features_train.pt') if self.train else os.path.join(f'/root/mjo/datasets/{model_type}_features_test.pt')
             
             if os.path.exists(features_filename) :
                 saved_features = torch.load(features_filename)
